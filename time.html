@@ -1,0 +1,350 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Документ без названия</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/font-awesome.min.css">
+</head>
+<body onLoad="clock()">
+<div class="time">
+	<form>
+	<input type="text" name="firstTag" class="screen" id="clock"><i class="fa fa-stop stopAlarm" aria-hidden="true" onClick="stopAlarm()"></i>
+	<input type="text" value="00:00" class="screen" id="clockAlarm"><i class="fa fa-check-square clockI" aria-hidden="true" onClick="buttonAlarm()"></i>
+	<input type="text" value="00:00:00:0000" class="screen" id="stopwatch">
+	<input type="text" value="00:00:00" class="screen" id="timer">
+	
+	<a href="#" id="play" onClick="playPause()"><i class="fa fa-play" aria-hidden="true"></i></a>
+	<a href="#" id="clear" onClick="clearTime()"><i class="fa fa-times" aria-hidden="true"></i></a>
+	</form>
+	<a href="#" id="settings" onClick="settings()"><i class="fa fa-cog" aria-hidden="true"></i></a>
+	<ul id="set">
+	<i onClick="closeSet()"></i>
+		<li>
+			<a href="#" id="sound" onClick="soundMenu()">Мелодия сигнала</a>
+			 <input type="range" min="0" max="100" id="volume" onChange="volume(this.value)">
+			 <ul id="soundMenu">
+				<li><input type="radio" value="Пузырьки" id="puz" name="menu" onClick="audio('audioOne')"><label for="puz">Пузырьки</label>
+					<audio preload="auto" loop src="audio/Puzyrki_(ringon.ru).mp3" id="audioOne"></audio></li>
+				<li><input type="radio" value="Ночной лес" id="les" name="menu" onClick="audio('audioTwo')"><label for="les">Ночной лес</label>
+					<audio preload="auto" loop src="audio/Nochnoy_les_(ringon.ru).mp3" id="audioTwo"></audio></li>
+				<li><input type="radio" value="Морская волна" id="voln" name="menu" onClick="audio('audioThree')"><label for="voln">Морская волна</label>
+					<audio preload="auto" loop src="audio/Zvuk_Morskoy_Volny_(ringon.ru).mp3" id="audioThree"></audio></li>
+				<li><input type="radio" value="На заре" id="zara" name="menu" onClick="audio('audiofor')"><label for="zara">На заре</label>
+					<audio preload="auto" loop src="audio/alyans_-_na_zare_(zaycev.net).mp3" id="audiofor"></audio></li>
+					<input type="submit" id="save" value="Сохранить" onClick="save()">
+			 </ul>
+		</li>
+		<li>
+			<input type="checkbox" id="alarm" onClick="alarmClock()"><label for="alarm">Режим будильника</label>
+		</li>
+		<li id="cut">
+			<select>
+				<option>Выберите временной промежуток</option>
+			</select>
+		</li>
+	</ul>
+	<div class="btnTime">
+		<a href="#" id="one" onClick="toggle('clock')">часы</a>
+		<a href="#" id="two" onClick="toggle('stopwatch')">секундомер</a>
+		<a href="#" id="three" onClick="toggle('timer')">таймер</a>
+	</div>
+</div>
+<script>
+	var timeInterval = '';
+	var stopTime = 1;
+	var div = document.querySelector('#play i');
+	var count = 0;
+	var timerId;
+	var audioV;
+	var playAudio;
+	var arrAlarm;
+	var countAlarm = false;
+	var blockRadio = false;
+		//////////////////////////////////////////////////////////////////////  http://jsfiddle.net/tJWmH/
+	function timer(){
+	var now = new Date();
+	var timer = document.getElementById('timer');
+	var val = timer.value;
+	var arr = val.split(':');								//// ПЕРЕДЕЛАЙ ЭТУ ХЕРОТЕНЬ ПО ПРИМЕРУ ВЫШЕ
+	var nowYear = now.getFullYear();
+	var nowMonth = now.getMonth();
+	var nowDate = now.getDate();
+	if(arr[0] > 99) arr[0] = 99;
+	if(arr[1] > 59) arr[1] = 59;
+	if(arr[2] > 59) arr[2] = 59;
+	var startDate = new Date(nowYear, nowMonth, nowDate);
+	var finishDate = new Date(nowYear, nowMonth, nowDate, arr[0],arr[1],arr[2]);
+	var ms = finishDate - startDate;
+	var seconds = ms / 1000;
+	if(seconds > 0){
+		var minutes = seconds / 60; // сколько минут в 34 часах
+		var hours = minutes / 60; // часов в временном промежутке
+		minutes = (hours - Math.floor(hours)) * 60; // сколько осталось минут в часе
+		hours = Math.floor(hours); // сколько часов до конца 
+		seconds = Math.floor((minutes - Math.floor(minutes)) * 60); // секунд в минуте
+		ms = seconds * 1000;
+		minutes = Math.floor(minutes); // минуты в часе
+		function timeIsOver(){
+				if(seconds == 0){
+					if(minutes == 0){
+						if(hours == 0){
+							clearInterval(timerId);
+							alert('Время вышло!');
+						}else{
+							hours--;
+							minutes = 59;
+							seconds = 59; 
+						}
+					}else{
+						minutes--;
+						seconds = 59;
+					}
+				}else{
+					seconds--;
+				}
+			valueTimer(hours, minutes, seconds);
+		}
+		timerId = setInterval(timeIsOver, 1000);
+	}
+	function valueTimer(h,m,s){
+			if(h < 10) h = '0' + h;
+			if(m < 10) m = '0' + m;
+			if(s < 10) s = '0' + s;
+			timer.value = h + ':' + m + ':' + s;
+	}
+	}
+	
+	////////////////////////////////////////////////////////////////////// ЧАСЫ ///////////////////////////////////////////////////////////////
+	function clock(){
+	var now = new Date();
+	var inputClock = document.getElementById('clock');
+	var alarm = document.getElementById('alarm');
+	var minutes = now.getMinutes();
+	var hours = now.getHours();
+	var seconds = now.getSeconds();
+	if(minutes <=9) minutes = '0'+ minutes;
+	if(seconds <=9) seconds = '0' + seconds;
+	if(hours <=9) hours = '0' + hours;
+	var date = hours + ':' + minutes + ':' + seconds;
+	inputClock.value = date;
+	var id = setTimeout('clock()', 500);
+		if(countAlarm){
+			if(arrAlarm[0] == hours && arrAlarm[1] == minutes && seconds == '00'){
+				var stop = document.querySelector('.stopAlarm');
+				stop.style.display = 'block';
+					if(playAudio == null){
+						playAudio = document.getElementById('audioOne');
+						playAudio.play();
+					}else{
+						playAudio.play();
+					}
+			}
+		}
+	}
+	//////////////////////////////////////////////////////////////////////// СЕКУНДОМЕР ////////////////////////////////////////////////////////////////////
+	function stopwatch(){
+			var inpClock = document.getElementById('stopwatch');
+			var nowTime = new Date();
+			function timeMeh(){
+			var nextTime = new Date() - nowTime; // кол-во времени прошедшего после запуска интервала с функцией
+			var mSeconds = Math.abs(Math.floor(nextTime)%1000); // Миллисекунды
+			var Seconds = Math.abs(Math.floor(nextTime/1000)%60); //Секунды
+			var Minutes = Math.abs(Math.floor(nextTime/1000/60)%60); //Минуты
+			var Hours = Math.abs(Math.floor(nextTime/1000/60/60)%24); //Часы
+			if(Hours <= 9) Hours = '0' + Hours;
+			if(Minutes <= 9) Minutes = '0' + Minutes;
+			if(Seconds <= 9) Seconds = '0' + Seconds;
+			if(mSeconds <= 99) mSeconds = '0' + mSeconds;
+			inpClock.value = Hours + ':' + Minutes + '.' + Seconds + ':' + mSeconds;
+			}
+		timeInterval = setInterval(timeMeh, 1);
+	}
+	
+	
+		function playPause(){
+		if(document.getElementById('stopwatch').style.display == 'block'){
+					if(stopTime == 1){
+				div.setAttribute('class', 'fa fa-pause');
+				div.setAttribute('aria-hidden', 'true');
+				timeInterval = setTimeout(stopwatch, 1);
+				stopTime = 0;
+			}else{
+				div.setAttribute('class', 'fa fa-play');
+				div.setAttribute('aria-hidden', 'true');
+				clearTimeout(timeInterval);
+				stopTime = 1
+			}
+		}
+		if(document.getElementById('timer').style.display == 'block'){
+				if(count == 0){
+				div.setAttribute('class', 'fa fa-pause');
+				div.setAttribute('aria-hidden', 'true');
+				timerId = setTimeout(timer,1);
+					count = 1;
+				}else{
+					div.setAttribute('class', 'fa fa-play');
+					div.setAttribute('aria-hidden', 'true');
+					 clearTimeout(timerId);
+					count = 0;
+				}
+			}
+	}
+	
+	function toggle(func){
+		var screen = document.getElementsByClassName('screen');
+		for(var i = 0; i<screen.length; i++){
+			screen[i].style.display = 'none';
+		}
+		
+		document.getElementById(func).style.display = 'block';
+	}
+	
+	function clearTime(){
+		var stopwatch = document.getElementById('stopwatch');
+		var timer = document.getElementById('timer');
+		if(stopwatch.style.display == 'block'){
+					stopwatch.value = '00:00:00:0000';
+			div.setAttribute('class', 'fa fa-play');
+					clearInterval(timeInterval);
+			}
+		if(timer.style.display == 'block'){
+			clearTimeout(timerId);
+			div.setAttribute('class', 'fa fa-play');
+				timer.value = '00:00:00';
+			}
+	}
+	
+	function settings(){
+		var settings = document.getElementById('settings');
+		var set = document.getElementById('set');
+		var elem = document.querySelector('#set i');
+		set.style.display = 'block';
+		elem.className = 'fa fa-times';
+		elem.setAttribute('aria-hidden', true);
+		settings.style.display = 'none';
+	}
+	
+	function closeSet(){
+		var set = document.getElementById('set');
+		var settings = document.getElementById('settings');
+		set.style.display = 'none';
+		settings.style.display = 'block';
+	}
+	
+	function soundMenu(){
+		var soundMenu = document.getElementById('soundMenu');
+		soundMenu.style.display = 'block';
+	}
+	
+	function audio(audio){
+		audioV = document.getElementById(audio);
+		audioV.play();
+	}
+	
+	document.addEventListener('play', function(event){
+		var switchAudio = document.getElementsByTagName('audio');
+		for(var i = 0; i<switchAudio.length; i++){
+			if(switchAudio[i] != event.target){
+				switchAudio[i].pause();
+				switchAudio[i].currentTime = 0;
+			}
+		}
+	}, true)
+	
+	function volume(value){
+		var switchAudio = document.getElementsByTagName('audio');
+		var val = parseInt(value);
+		for(var i = 0; i<switchAudio.length; i++){
+			if(val >= 0 && val <= 1){switchAudio[i].volume = 0;
+			}else if(val >= 2 && val <= 19){switchAudio[i].volume = 0.1;
+			}else if(val >= 20 && val <= 29){switchAudio[i].volume = 0.2;
+			}else if(val >= 30 && val <= 39){switchAudio[i].volume = 0.3;
+			}else if(val >= 40 && val <= 49){switchAudio[i].volume = 0.4;
+			}else if(val >= 50 && val <= 59){switchAudio[i].volume = 0.5;
+			}else if(val >= 60 && val <= 69){switchAudio[i].volume = 0.6;
+			}else if(val >= 70 && val <= 79){switchAudio[i].volume = 0.7;
+			}else if(val >= 80 && val <= 89){switchAudio[i].volume = 0.8;
+			}else if(val >= 90 && val <= 99){switchAudio[i].volume = 0.9;
+			}else if(val == 100){switchAudio[i].volume = 1;
+				}
+			}
+		}
+	
+	function save(){
+		var soundMenu = document.getElementById('soundMenu');
+		var radioInput = document.querySelectorAll('input[name="menu"]');
+		for(var i = 0; i<radioInput.length; i++){
+			if(radioInput[i].checked){
+				soundMenu.style.display = 'none';
+				audioV.pause();
+				audioV.currentTime = 0;
+			}
+		}
+			if(radioInput[0].checked){
+				playAudio = document.getElementById('audioOne');
+			}else if(radioInput[1].checked){
+				playAudio = document.getElementById('audioTwo');
+			}else if(radioInput[2].checked){
+				playAudio = document.getElementById('audioThree');
+			}else if(radioInput[3].checked){
+				playAudio = document.getElementById('audiofor');
+			}
+	}
+	
+	function alarmClock(){
+		var alarm = document.getElementById('alarm');
+		var clockAlarm = document.getElementById('clockAlarm');
+		var clockI = document.querySelector('.clockI');
+		var screen = document.querySelectorAll('.screen:not(#clockAlarm)');
+		var btnTime = document.querySelectorAll('.btnTime a');
+		if(alarm.checked){
+			clockAlarm.style.display = 'block';
+			clockI.style.display = 'block';
+			for(var i = 0; i<screen.length; i++){
+			screen[i].style.display = 'none';
+				}
+			for(var j = 0; j<btnTime.length; j++){
+				btnTime[j].style.pointerEvents = 'none';
+			}
+		}else{
+			clockAlarm.style.display = 'none';
+			clockI.style.display = 'none';
+			for(var i = 0; i<screen.length; i++){
+			screen[0].style.display = 'block';
+				}
+			for(var j = 0; j<btnTime.length; j++){
+				btnTime[j].style.pointerEvents = 'auto';
+			}
+		}
+	}
+	
+	function buttonAlarm(){
+		var alarm = document.getElementById('alarm');
+		var clockAlarm = document.getElementById('clockAlarm');
+		var clockI = document.querySelector('.clockI');
+		var screen = document.querySelectorAll('.screen:not(#clockAlarm)');
+		var btnTime = document.querySelectorAll('.btnTime a');
+			var valueAlarm = clockAlarm.value;
+			arrAlarm = valueAlarm.split(':');
+			clockAlarm.style.display = 'none';
+			clockI.style.display = 'none';
+			for(var i = 0; i<screen.length; i++){
+			screen[0].style.display = 'block';
+				}
+			for(var j = 0; j<btnTime.length; j++){
+				btnTime[j].style.pointerEvents = 'auto';
+			}
+			countAlarm = true;
+	}
+	
+	function stopAlarm(){
+		var stop = document.querySelector('.stopAlarm');
+		stop.style.display = 'none';
+		playAudio.pause();
+		playAudio.currentTime = 0;
+		countAlarm = false;
+	}
+</script>
+</body>
+</html>
